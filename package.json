@@ -1,8 +1,13 @@
 {
 	"name": "@gongt/ddnspod",
 	"version": "0.0.0",
-	"main": "dist/server.js",
+	"bin": {
+		"ddnspod": "dist/server.js"
+	},
 	"scripts": {
+		"start": "cd dist && nodemon entry/server.js & tsc -p src -w",
+		"fetch-api": "tsc -p api-fetch && node ./dist/api-fetch.js",
+		"prepublishOnly": "rm -rf ./dist && tsc -p src",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"repository": {
@@ -10,7 +15,7 @@
 		"url": "git+https://github.com/GongT/ddnspod.git"
 	},
 	"keywords": [
-		"ddns"
+		"ddns", "dnspod", "client", "typescript"
 	],
 	"author": "GongT <gongteng524702837@gmail.com>",
 	"license": "WTFPL",
@@ -20,10 +25,13 @@
 	"homepage": "https://github.com/gongt/ddnspod#readme",
 	"description": "",
 	"dependencies": {
+		"dclient": "^1.0.1",
+		"request-promise-native": "^1.0.3",
 		"request": "^2.81.0"
 	},
 	"devDependencies": {
-		"typescript": "^2.2.2",
-		"@types/node": "latest"
+		"@types/node": "^7.0.12",
+		"@types/request-promise-native": "^1.0.2",
+		"typescript": "^2.2.2"
 	}
 }
