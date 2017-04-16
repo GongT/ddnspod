@@ -4,7 +4,7 @@
 		"module": "commonjs",
 		"target": "es6",
 		"lib": ["es7", "es6", "es5", "es2017.object"],
-		"moduleResolution": "node",
+		"moduleResolution": "classic",
 		"noEmitOnError": true,
 		"noImplicitThis": true,
 		"noImplicitAny": false,

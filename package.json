@@ -15,7 +15,10 @@
 		"url": "git+https://github.com/GongT/ddnspod.git"
 	},
 	"keywords": [
-		"ddns", "dnspod", "client", "typescript"
+		"ddns",
+		"dnspod",
+		"client",
+		"typescript"
 	],
 	"author": "GongT <gongteng524702837@gmail.com>",
 	"license": "WTFPL",
@@ -26,8 +29,9 @@
 	"description": "",
 	"dependencies": {
 		"dclient": "^1.0.1",
+		"request": "^2.81.0",
 		"request-promise-native": "^1.0.3",
-		"request": "^2.81.0"
+		"source-map-support": "^0.4.14"
 	},
 	"devDependencies": {
 		"@types/node": "^7.0.12",

@@ -80,7 +80,7 @@ callback.js必须导出`default`函数，它返回promise，并解决为数组�
 
 #### IP_CHANGE - 配置如何检测更改
 1. 定时器
-> interval:?minutes=5
+> interval:?minutes=5&seconds=0
 
 #### NS - 配置使用的DNS服务器
 

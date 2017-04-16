@@ -1,5 +1,7 @@
+import "source-map-support/register";
 import {parse, format} from "url";
 import {getIpAddress} from "./get-ip/index";
+import {createTrigger} from "./triggers/index";
 
 export function die(message, ...args: any[]) {
 	console.error(message, ...args);
@@ -19,14 +21,18 @@ const ipDetectAuth = IP_DETECT_AUTH? parse(IP_DETECT_AUTH, false) : null;
 
 const ipChange = parse(IP_CHANGE, true);
 
-if (!ipDetect.protocol) {
-	throw die('unknown IP_DETECT value: %s', IP_DETECT);
-}
+/*
+ const getter = getIpAddress(ipDetect, ipDetectAuth);
+ 
+ getter().then((data) => {
+ console.log(require('util').inspect(data, {colors: true}));
+ }, (e) => {
+ console.error(e);
+ })
+ */
 
-const getter = getIpAddress(ipDetect, ipDetectAuth);
-
-getter().then((data) => {
-	console.log(require('util').inspect(data, {colors: true}));
-}, (e) => {
-	console.error(e);
-})
+const trigger = createTrigger(ipChange);
+trigger.on(() => {
+	console.log('ip changed, start detect');
+});
+trigger.start();

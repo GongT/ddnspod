@@ -18,6 +18,10 @@ export interface GetIpAddressFunc {
 }
 
 export function getIpAddress(ipDetect: Url, ipDetectAuth?: Url): GetIpAddressFunc {
+	if (!ipDetect.protocol) {
+		throw die('unknown IP_DETECT value: %s', ipDetect.href);
+	}
+	
 	const [_, method, http] = /^([a-z]+)\+?(.+)?:$/i.exec(ipDetect.protocol);
 	const hash = decodeURIComponent(ipDetect.hash.replace(/^#/, ''));
 	ipDetect.hash = null;
