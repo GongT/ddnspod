@@ -23,12 +23,17 @@ docker run -d --restart=always --name ddnspod \
     -e 'DYNAMIC_TOKEN=D令牌当前显示（没有则删除这一行）' \
     -e 'IP_DETECT=(见下方说明)' \
     -e 'IP_CHANGE=(见下方说明)' \
-	-e 'NS=(见下方说明)' \
 	gongt/ddnspod \
-	www.example.com blog.test.net
+	*.example.com sub.example.com:NS blog.test.net email.test.net:MX
 ```
 
 ## 配置
+
+#### 监视域名
+作为程序的参数传入，格式为：`域名:类型`。    
+类型默认为 A。    
+程序运行时会查询当前这个记录的类型，按照当前类型处理。    
+只有当前没有这条记录时，才会按照此处的类型处理。
 
 #### LOGIN_TOKEN
 登录token的添加方法: https://support.dnspod.cn/Kb/showarticle/tsid/227/
@@ -81,10 +86,3 @@ callback.js必须导出`default`函数，它返回promise，并解决为数组�
 #### IP_CHANGE - 配置如何检测更改
 1. 定时器
 > interval:?minutes=5&seconds=0
-
-#### NS - 配置使用的DNS服务器
-
-可用列表参考：https://support.dnspod.cn/Kb/showarticle/tsid/83/
-
-直接带着斜线原样复制过来    
-默认是免费套餐：`f1g1ns1.dnspod.net/f1g1ns2.dnspod.net`

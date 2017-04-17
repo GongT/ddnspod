@@ -1,5 +1,5 @@
 export interface Listener {
-	(): Promise<any>|void;
+	(...args: any[]): Promise<any>|void;
 }
 
 export abstract class ChangeTrigger {
@@ -19,7 +19,7 @@ export abstract class ChangeTrigger {
 		this._start();
 	}
 	
-	protected trigger() {
+	protected trigger(...args: any[]) {
 		if (!this.isStarted) {
 			console.error('triggered on a paused trigger.');
 			return;
@@ -39,7 +39,7 @@ export abstract class ChangeTrigger {
 		let ps;
 		try {
 			ps = this.listeners.map((cb) => {
-				return cb();
+				return cb(...args);
 			});
 			Promise.all(ps).catch(handle).then(() => {
 				this.resume();

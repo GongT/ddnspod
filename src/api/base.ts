@@ -1,5 +1,13 @@
 import * as request from "request-promise-native";
 import * as _request from "request";
+import {type, arch} from 'os';
+
+const version = require(__dirname + '/../../package.json').version;
+const uaString = [
+	'com.github.GongT.ddnspod',
+	`(package: ${version}, docker: ${process.env.IN_DOCKER? 'YES' : 'NO'})`,
+	`nodejs (${process.version}, official, ${type()} ${arch()})`
+].join(' ');
 
 export interface DnsPodApiConfig {
 	login_token: string;
@@ -39,13 +47,24 @@ export class DnsPodApiBase {
 		const opt: request.Options = Object.assign({}, this.config, {
 			url: url,
 			json: true,
-			method: method
+			method: method,
+			headers: {
+				'User-Agent': uaString,
+			}
 		});
 		if (method.toUpperCase() === 'POST') {
 			opt.form = input;
 		} else {
 			opt.qs = input;
 		}
-		return <any>request(opt);
+		return <any>request(opt).then((data) => {
+			if (!data || !data.status) {
+				throw new Error('unknown dnspod response: no data or no status.');
+			}
+			if (data.status.code != '1') {
+				throw new Error(data.status.message || `error code - ${data.status.code}`);
+			}
+			return data;
+		});
 	}
 }
