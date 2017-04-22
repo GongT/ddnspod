@@ -38,3 +38,6 @@ typings/
 dist
 Dockerfile
 .*ignore
+*.sh
+!_build_script.sh
+README.md

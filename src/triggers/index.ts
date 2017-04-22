@@ -26,16 +26,17 @@ export class AddressChangeTrigger extends ChangeTrigger {
 			console.log('  new: %s', newAddress);
 			console.log('  add: %s', add);
 			console.log('  remove: %s', remove);
-			return new Promise((resolve, reject) => {
-				setImmediate(resolve);
-			}).then(() => {
+			await new Promise((resolve) => setImmediate(resolve));
+			try {
+				await this.trigger(add, remove);
 				console.log('change trigger complete.');
 				console.log('');
-				return this.trigger(add, remove);
-			}).then(() => {
 				setCurrentAddress(newAddress);
-			}).catch(() => {
-			});
+			} catch (e) {
+				console.error(e);
+				
+				die("developing mode: die to prevent more errors.");
+			}
 		} else {
 			return null;
 		}

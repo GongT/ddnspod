@@ -35,7 +35,6 @@
 	"devDependencies": {
 		"@types/node": "^7.0.12",
 		"@types/request-promise-native": "^1.0.2",
-		"nodemon": "^1.11.0",
 		"typescript": "^2.2.2"
 	}
 }
