@@ -35,9 +35,8 @@ export function setCurrentAddress(s: string[]) {
 
 const ipChange = parse(IP_CHANGE, true);
 export const trigger: ChangeTrigger = createTrigger(ipChange, getAddress);
-trigger.on(async () => {
-	const change = setCurrentAddress(await getAddress());
-	return change? change : '';
+trigger.on(async (add: string[], remove: string[]) => {
+
 });
 
 export const dnsApi = new DnsPodApi({
@@ -46,6 +45,7 @@ export const dnsApi = new DnsPodApi({
 });
 
 main(process.argv.slice(2)).then(() => {
+	console.log('init complete... trigger start!');
 	trigger.start();
 }).catch((e) => {
 	console.error(e);

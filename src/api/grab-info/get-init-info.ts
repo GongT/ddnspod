@@ -25,13 +25,16 @@ function fetchFileCache(id: string) {
 		const ret = require(FILE);
 		if (ret[0] > Date.now()) {
 			cache[id] = ret;
+			
 			return true;
+		} else {
+			console.log('cache for %s is expired', id);
 		}
 	}
 }
 
 function writeFileCache(id: string, value: any) {
-	const FILE = `/mnt/cache/${id}.txt`;
+	const FILE = `/mnt/cache/${id}.json`;
 	cache[id] = [Date.now() + 3600 * 1000, value];
 	writeFileSync(FILE, JSON.stringify(cache[id]), 'utf8');
 }
@@ -64,17 +67,27 @@ export function parseSubDomain(host: string) {
 }
 
 export async function getDomainInfo(domain: string): Promise<DomainInfo> {
-	return (cache[domain] && cache[domain][1]) || getRecordsCached(domain);
+	return (cache[domain] && cache[domain][1]) || await getRecordsCached(domain);
 }
 
 export async function getRecordsCached(domain: string): Promise<DomainInfoWithRecords> {
+	let ret: DomainInfoWithRecords;
 	const id = domain;
 	if (fetchFileCache(id)) {
-		return cache[id][1];
+		ret = cache[id][1];
+		if (ret.list) {
+			ret.list.forEach((item) => {
+				item.updated_on = new Date(item.updated_on);
+				item.alive = new Date(item.alive);
+			});
+		}
+		console.log('cached domain info: ', domain);
+		return ret;
 	}
 	
+	console.log('');
 	console.log('fetch new domain info: ', domain);
-	const ret: DomainInfoWithRecords = <any> {};
+	ret = <any> {};
 	
 	const data = await dnsApi.recordList({
 		domain: domain,
@@ -91,6 +104,10 @@ export async function getRecordsCached(domain: string): Promise<DomainInfoWithRe
 	console.log('  name: ', ret.name);
 	console.log('  ns: ', ret.ns);
 	console.log('  records: ', ret.list.length);
+	ret.list.forEach((ret) => {
+		console.log('    sub domain: %s:%s -> %s', ret.name, ret.type, ret.value);
+	});
+	console.log('');
 	
 	writeFileCache(id, ret);
 	return ret;
@@ -105,10 +122,11 @@ export function parseRecordInfo(domain: DomainInfo, raw) {
 	const match = ddnsMark.exec(raw.remark || '');
 	let alive: Date;
 	if (match) {
-		alive = new Date(parseInt(match[1]) * 1000)
+		alive = new Date(parseInt(match[1]) * 1000);
 	} else {
 		alive = new Date(0);
 	}
+	console.log(alive.toLocaleString());
 	const domainInfo = {
 		domain_id: parseInt(domain.id),
 		base: domain.name,
@@ -123,6 +141,6 @@ export function parseRecordInfo(domain: DomainInfo, raw) {
 		type: <any>ERecordType[(raw.type || raw.record_type).toUpperCase()],
 		remark: (raw.remark || '').replace(ddnsMark, '').trim(),
 		mx: parseInt(raw.mx),
-		alive,
+		alive: alive,
 	}, domainInfo);
 }

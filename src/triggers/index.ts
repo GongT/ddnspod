@@ -1,18 +1,44 @@
 import {Url} from "url";
-import {die, getCurrentAddress} from "../server";
+import {die, getCurrentAddress, setCurrentAddress} from "../server";
 import {TimerTrigger} from "./interval";
 import {ChangeTrigger} from "./base";
 import {GetIpAddressFunc} from "../get-ip/index";
 
 export class AddressChangeTrigger extends ChangeTrigger {
+	constructor(private addressGetter: GetIpAddressFunc) {
+		super();
+	}
+	
 	protected _start() {
 	}
 	
 	protected _stop() {
 	}
 	
-	public change(diff: {add: string[], remove: string[]}) {
-		this.trigger(diff);
+	public async checkChange() {
+		const newAddress = await this.addressGetter();
+		const {add, remove} = array_diff(getCurrentAddress(), newAddress);
+		
+		if (add.length || remove.length) {
+			console.log('');
+			console.log('change trigger emit: not changed.');
+			console.log('  current: %s', getCurrentAddress());
+			console.log('  new: %s', newAddress);
+			console.log('  add: %s', add);
+			console.log('  remove: %s', remove);
+			return new Promise((resolve, reject) => {
+				setImmediate(resolve);
+			}).then(() => {
+				console.log('change trigger complete.');
+				console.log('');
+				return this.trigger(add, remove);
+			}).then(() => {
+				setCurrentAddress(newAddress);
+			}).catch(() => {
+			});
+		} else {
+			return null;
+		}
 	}
 }
 
@@ -24,18 +50,21 @@ export function createTrigger(url: Url, addressGetter: GetIpAddressFunc): Change
 		pump = new TimerTrigger(url.query);
 		break;
 	default:
-		throw die('unknown tirgger type: %s', url.protocol);
+		throw die('unknown trigger type: %s', url.protocol);
 	}
 	
-	const ret = new AddressChangeTrigger();
+	const ret = new AddressChangeTrigger(addressGetter);
 	ret.start();
 	
 	pump.on(async () => {
-		const diff = array_diff(getCurrentAddress(), await addressGetter());
-		
-		if (diff.add.length || diff.remove.length) {
-			ret.change(diff);
+		const changed = await ret.checkChange();
+		if (!changed && process.stdout.isTTY) {
+			console.log('change trigger emit: not changed.');
 		}
+	});
+	
+	['start', 'stop'].forEach((n) => {
+		ret[n] = pump[n].bind(pump);
 	});
 	
 	return ret;

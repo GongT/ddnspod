@@ -26,6 +26,12 @@ export class NameStatus {
 	async init(): Promise<void> {
 		this.originalRecords = await getInitInfo(this.host, this.type);
 		
+		console.log('');
+		console.log('init query for %s (%s):', this.host, ERecordType[this.type]);
+		this.originalRecords.forEach((record) => {
+			console.log('    -> %s', record.value);
+		});
+		
 		const ips = getCurrentAddress();
 		
 		// get some reuse-able records
@@ -37,6 +43,7 @@ export class NameStatus {
 		const outdate = this.originalRecords.filter((record) => {
 			return ips.indexOf(record.value) === -1;
 		}).filter((record) => {
+			// TODO
 			return Date.now() - record.alive.getTime() > 3600 * 1000;
 		});
 		
@@ -47,17 +54,28 @@ export class NameStatus {
 		});
 		
 		if (this.records.length) {
+			console.log('  update %s records:', this.records.length);
 			await updateAlive(this.records);
+		} else {
+			console.log('  nothing to update');
 		}
 		
 		if (outdate.length) {
+			console.log('  delete %s records:', outdate.length);
 			await deleteRecord(outdate);
+		} else {
+			console.log('  nothing to delete');
 		}
 		
 		if (nonExists.length) {
+			console.log('  create %s records:', nonExists.length);
 			this.records = this.records.concat(await createNew(nonExists, this.host, this.type));
+		} else {
+			console.log('  nothing to create');
 		}
 		this.originalRecords = [];
+		
+		console.log('init query success: %s:%s -> %s', this.host, ERecordType[this.type], this.records.map(e => e.name));
 	}
 }
 
@@ -65,16 +83,15 @@ export async function prepareForNames(names: string[]) {
 	console.log('prepare runtime data:');
 	const nameStatus: NameStatus[] = [];
 	for (let name of names) {
-		let [host, type] = name.split(/:/);
-		type = type? type.toUpperCase() : 'A';
+		let [host, typeName] = name.split(/:/);
+		typeName = typeName? typeName.toUpperCase() : 'A';
 		
-		if (!ERecordType.hasOwnProperty(type)) {
-			throw die('dnspod do not support dns record type: ', type);
+		if (!ERecordType.hasOwnProperty(typeName)) {
+			throw die('dnspod do not support dns record type: ', typeName);
 		}
 		
-		const item = new NameStatus(host, ERecordType[type]);
+		const item = new NameStatus(host, ERecordType[typeName]);
 		await item.init();
-		console.log('init query success: %s -> %s', name, item.records.map(e => e.name));
 		
 		nameStatus.push(item);
 	}

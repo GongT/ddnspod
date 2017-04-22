@@ -24,14 +24,15 @@ export abstract class ChangeTrigger {
 			console.error('triggered on a paused trigger.');
 			return;
 		}
-		console.log('trigger activated!');
+		// console.log('trigger activated!');
 		if (this.listeners.length === 0) {
-			return;
+			return Promise.resolve();
 		}
 		
 		const handle = (e: Error) => {
 			console.error('Error in listeners: ');
 			console.error(e);
+			return Promise.reject(e);
 		};
 		
 		this.pause();
@@ -41,12 +42,12 @@ export abstract class ChangeTrigger {
 			ps = this.listeners.map((cb) => {
 				return cb(...args);
 			});
-			Promise.all(ps).catch(handle).then(() => {
+			return Promise.all(ps).catch(handle).then(() => {
 				this.resume();
 			});
 		} catch (e) {
 			this.resume();
-			handle(e);
+			return handle(e);
 		}
 	}
 	
