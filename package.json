@@ -27,7 +27,6 @@
 	"homepage": "https://github.com/gongt/ddnspod#readme",
 	"description": "",
 	"dependencies": {
-		"dclient": "^1.0.1",
 		"request": "^2.81.0",
 		"request-promise-native": "^1.0.3",
 		"source-map-support": "^0.4.14"

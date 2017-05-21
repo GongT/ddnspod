@@ -11,7 +11,6 @@ fi
 
 docker rm -f ddnspod
 
-mkdir -p mnt
 docker run --name ddnspod -d \
 	-e "IP_DETECT=${IP_DETECT-""}" \
 	-e "IP_DETECT_AUTH=${IP_DETECT_AUTH-""}" \

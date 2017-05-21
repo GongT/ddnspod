@@ -1,7 +1,6 @@
 FROM node:alpine
 
 WORKDIR /data
-VOLUME /mnt
 
 # https://support.dnspod.cn/Kb/showarticle/tsid/83/
 ARG IN_CHINA=no
