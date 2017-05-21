@@ -21,7 +21,7 @@ export const getAddress: GetIpAddressFunc = getIpAddress(ipDetect, ipDetectAuth)
 
 let current: string[];
 export function getCurrentAddress(): string[] {
-	return current;
+	return current.slice();
 }
 
 export function setCurrentAddress(s: string[]) {

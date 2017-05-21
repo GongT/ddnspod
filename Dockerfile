@@ -21,7 +21,9 @@ ENV  \
 
  IP_DETECT_AUTH="" \
 
- IP_CHANGE="interval:?minutes=5"
+ IP_CHANGE="interval:?minutes=5" \
+ 
+ IP_CHANGE_NOTIFY=""
 
 COPY . /data
 

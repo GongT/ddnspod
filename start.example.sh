@@ -13,10 +13,10 @@ docker rm -f ddnspod
 
 mkdir -p mnt
 docker run --name ddnspod -d \
-	-v "$(pwd)/mnt:/mnt" \
 	-e "IP_DETECT=${IP_DETECT-""}" \
 	-e "IP_DETECT_AUTH=${IP_DETECT_AUTH-""}" \
 	-e "IP_CHANGE=${IP_CHANGE-""}" \
 	-e "LOGIN_TOKEN=${LOGIN_TOKEN-""}" \
+	-e "IP_CHANGE_NOTIFY=" \
 	gongt/ddnspod \
 	example.com

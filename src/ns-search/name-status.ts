@@ -5,6 +5,7 @@ import {updateAlive} from "../api/update-ddns/update-alive";
 import {createNew} from "../api/update-ddns/create-new";
 import {deleteRecord} from "../api/update-ddns/delete-record";
 import {updateRecord} from "../api/update-ddns/update-record";
+import {pushNotify} from "../notify";
 
 export class NameStatus {
 	host: string;
@@ -19,7 +20,8 @@ export class NameStatus {
 		this.type = type;
 	}
 	
-	async update(ipMap: {[old: string]: string}) {
+	async update(ipMap: {[old: string]: string}): Promise<number> {
+		let changed = 0;
 		console.log('update(): ');
 		this.originalRecords = await getInitInfo(this.host, this.type);
 		for (let record of this.records) {
@@ -30,12 +32,18 @@ export class NameStatus {
 			}
 			console.log('  record %s', record.type);
 			if (record.value !== value) {
+				changed++;
 				console.log('  updating: %s -> %s', record.value, value);
 				await updateRecord(record, value);
 				record.value = value;
 			}
 		}
 		console.log('update() complete!');
+		if (changed > 0) {
+			pushNotify();
+		}
+		
+		return changed;
 	}
 	
 	async remove(ips: string[]) {
@@ -59,7 +67,8 @@ export class NameStatus {
 		}
 	}
 	
-	async init(): Promise<void> {
+	async init(): Promise<number> {
+		let changed = 0;
 		this.originalRecords = await getInitInfo(this.host, this.type);
 		
 		console.log('');
@@ -69,44 +78,82 @@ export class NameStatus {
 		});
 		
 		const ips = getCurrentAddress();
+		console.log('my ips:', ips);
+		console.log(this.originalRecords);
 		
-		// get some reuse-able records
-		this.records = this.originalRecords.filter((record) => {
-			return ips.indexOf(record.value) !== -1;
+		this.records = []; // update to dated
+		const reuse: RecordInfo[] = [];
+		const need_update: [RecordInfo, string][] = [];
+		const need_delete: RecordInfo[] = [];
+		
+		this.originalRecords.filter((record) => {
+			const recordHit = ips.indexOf(record.value) !== -1;
+			if (recordHit) {
+				ips.splice(ips.indexOf(record.value), 1);
+				this.records.push(record);
+				reuse.push(record);
+				return false;
+			}
+			return true;
+		}).forEach((record) => {
+			const recordOutDate = Date.now() - record.alive.getTime() > 3600 * 1000;
+			if (recordOutDate) {
+				need_delete.push(record);
+			} else if (ips.length) {
+				this.records.push(record);
+				const ip = ips.shift();
+				need_update.push([record, ip]);
+				// todo: 如何确定这些记录是其他机器的，还是自己需要更新的？
+			} else {
+				need_delete.push(record);
+			}
 		});
 		
-		// delete these records, FIXME: race condition with other ddns client
-		const outdate = this.originalRecords.filter((record) => {
-			return ips.indexOf(record.value) === -1;
-		}).filter((record) => {
-			// TODO
-			return Date.now() - record.alive.getTime() > 3600 * 1000;
-		});
+		const nonExists = ips;
+		console.log('  not exists records:', nonExists);
 		
-		// find not exists records
-		const exists = this.records.map((e) => e.value);
-		const nonExists = ips.filter((ip) => {
-			return exists.indexOf(ip) === -1;
-		});
-		
-		if (this.records.length) {
-			console.log('  update %s records:', this.records.length);
-			await updateAlive(this.records);
+		if (reuse.length) {
+			changed += reuse.length;
+			console.log('  update %s records:', reuse.length);
+			await updateAlive(reuse);
 		} else {
-			console.log('  nothing to update');
+			console.log('  nothing to update alive');
 		}
 		
-		if (outdate.length) {
-			console.log('  delete %s records:', outdate.length);
-			await deleteRecord(outdate);
+		if (need_update.length) {
+			changed += need_update.length;
+			for (let [record, value] of need_update) {
+				console.log('  updating: %s -> %s', record.value, value);
+				await updateRecord(record, value);
+			}
+		} else {
+			console.log('  nothing to update value');
+		}
+		
+		if (need_delete.length) {
+			changed += need_delete.length;
+			console.log('  delete %s records:', need_delete.length);
+			await deleteRecord(need_delete);
 		} else {
 			console.log('  nothing to delete');
 		}
 		
-		await this.add(nonExists);
+		if (nonExists.length) {
+			changed += nonExists.length;
+			console.log('  create %s records:', nonExists.length);
+			this.records = this.records.concat(await createNew(nonExists, this.host, this.type));
+		} else {
+			console.log('  nothing to create');
+		}
 		
 		this.originalRecords = [];
 		console.log('init query success: %s (%s)', this.host, ERecordType[this.type]);
-		console.log('')
+		console.log('');
+		
+		if (changed) {
+			pushNotify();
+		}
+		
+		return changed;
 	}
 }
